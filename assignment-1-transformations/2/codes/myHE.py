@@ -31,15 +31,23 @@ def histogramEqualize(img_path):
     else:
         raise ValueError
 
-    plt.subplot(2, 1, 1)
+    plt.subplot(2, 2, 1)
     plt.imshow(img, cmap='gray')
     plt.title('Original Image')
 
-    plt.subplot(2, 1, 2)
+    plt.subplot(2, 2, 2)
     plt.imshow(he_img, cmap='gray')
     plt.title('Histogram Equalized Image')
+
+    plt.subplot(2, 2, 3)
+    plt.hist(img.ravel(), 64, (0, 256))
+    plt.yticks([])
+
+    plt.subplot(2, 2, 4)
+    plt.hist(he_img.ravel(), 64, (0, 256))
+    plt.yticks([])
     plt.show()
 
 
 if __name__ == "__main__":
-    histogramEqualize('../data/retina.png')
+    histogramEqualize('../data/TEM.png')

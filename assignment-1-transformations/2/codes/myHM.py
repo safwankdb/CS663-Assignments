@@ -79,16 +79,16 @@ def histogramMatch(src_path, ref_path, src_mask, ref_mask):
     plt.title('Histogram Matched Image')
 
     plt.subplot(2, 3, 4)
-    plt.hist(src_m.ravel(), 256, (0, 256))
-    plt.xticks([]), plt.yticks([])
+    plt.hist(src_m.ravel(), 64, (0, 256))
+    plt.yticks([])
 
     plt.subplot(2, 3, 5)
-    plt.hist(ref_m.ravel(), 256, (0, 256))
-    plt.xticks([]), plt.yticks([])
+    plt.hist(ref_m.ravel(), 64, (0, 256))
+    plt.yticks([])
 
     plt.subplot(2, 3, 6)
-    plt.hist(hm_img_m.ravel(), 256, (0, 256))
-    plt.xticks([]), plt.yticks([])
+    plt.hist(hm_img_m.ravel(), 64, (0, 256))
+    plt.yticks([])
     plt.show()
 
 
