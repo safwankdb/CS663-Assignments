@@ -10,60 +10,43 @@ def get_tile(img, y, x, k):
     return p1, p2
 
 
-def get_cdf(img, x, k, w, prev_pdf=None, threshold=0.04):
-    # print(x, k, w-k)
-    if x == 0:
-        pdf = np.histogram(img, 256, (0, 256))[0]
-    elif x <= k:
-        pdf1 = np.histogram(img[:, -1], 256, (0, 256))[0]
-        pdf = prev_pdf + pdf1
-    elif x >= w-k:
-        pdf2 = np.histogram(img[:, 0], 256, (0, 256))[0]
-        pdf = prev_pdf - pdf2
-    else:
-        pdf1 = np.histogram(img[:, -1], 256, (0, 256))[0]
-        pdf2 = np.histogram(img[:, 0], 256, (0, 256))[0]
-        pdf = prev_pdf + pdf1 - pdf2
+def get_cdf(img, threshold=0.04):
+    pdf = np.histogram(img, 256, (0, 256))[0]
 
     # Limiting Contrast
     extra_mass = 0
-    prev_pdf = pdf
-    pdf = pdf / np.sum(pdf)
-    if any(pdf < 0):
-        print('*'*80)
+    pdf = pdf / (img.shape[0]*img.shape[1])
     for i, p in enumerate(pdf):
         if p > threshold:
             extra_mass += p - threshold
             pdf[i] = threshold
     pdf += extra_mass / len(pdf)
+
     cdf = 255 * pdf.cumsum()
     cdf = cdf.astype(np.uint8)
-    return cdf, prev_pdf
+    return cdf
 
 
-def applyHE(img, x, k, w, prev_pdf):
-    cdf, prev_pdf = get_cdf(img, x, k, w, prev_pdf)
-    if x > k:
-        img = img[:, 1:]
+def applyHE(img):
+    cdf = get_cdf(img)
     he_img = np.zeros_like(img, np.uint8)
     he_img = cdf[img]
-    return he_img, prev_pdf
+    return he_img
 
 
 def applyCLAHE(img, k):
     new_img = np.zeros_like(img, np.uint8)
-    prev_pdf = None
     h, w = img.shape
     for i in range(0, h):
         for j in range(0, w):
             p1, p2 = get_tile(img, i, j, k)
-            tile = img[p1[0]:p2[0], max(0, p1[1]-1):p2[1]]
-            new_tile, prev_pdf = applyHE(tile, j, k, w, prev_pdf)
+            tile = img[p1[0]:p2[0], p1[1]:p2[1]]
+            new_tile = applyHE(tile)
             new_img[p1[0]:p2[0], p1[1]:p2[1]] = new_tile
     return new_img
 
 
-def CLAHE(img_path, window_size=75):
+def CLAHE(img_path, window_size=50):
     """
     img_path    : Image to apply CLAHE algorithm\n
     window_size : Window size for the algorithm\n
@@ -95,5 +78,5 @@ def CLAHE(img_path, window_size=75):
 
 
 if __name__ == "__main__":
-    img_path = '../data/canyon.png'
+    img_path = '../data/chestXray.png'
     CLAHE(img_path)
