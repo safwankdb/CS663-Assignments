@@ -6,8 +6,7 @@ from PIL import Image
 def get_cdf(img):
     h, w = img.shape
     pdf = np.histogram(img, 256, (0, 256))[0] / (h*w)
-    cdf = pdf.cumsum()
-    cdf = 255 * (cdf - cdf.min())/(cdf.max() - cdf.min())
+    cdf = 255 * pdf.cumsum()
     cdf = cdf.astype(np.uint8)
     return cdf
 
