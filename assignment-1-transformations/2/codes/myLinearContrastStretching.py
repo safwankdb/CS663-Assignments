@@ -11,7 +11,7 @@ def linearContrastStretch(img_path):
     curr_range = img_max - img_min
     full_range = 255
     img_streched = ((img - img_min)/curr_range)*full_range
-    img_streched = Image.fromarray(img_streched.astype(np.uint8))
+    img_streched = img.astype(np.uint8)
 
     plt.subplot(2, 1, 1)
     plt.imshow(img, cmap='gray')
@@ -26,4 +26,4 @@ def linearContrastStretch(img_path):
 
 
 if __name__ == "__main__":
-    linearContrastStretch('../data/retina.png')
+    linearContrastStretch('../data/canyon.png')

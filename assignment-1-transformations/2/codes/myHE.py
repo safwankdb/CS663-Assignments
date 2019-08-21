@@ -26,10 +26,8 @@ def histogramEqualize(img_path):
     if img.ndim == 3:
         img_slices = [applyHE(img[:, :, i]) for i in range(3)]
         he_img = np.dstack(img_slices)
-        he_img = Image.fromarray(he_img)
     elif img.ndim == 2:
         he_img = applyHE(img)
-        he_img = Image.fromarray(he_img)
     else:
         raise ValueError
 
@@ -44,4 +42,4 @@ def histogramEqualize(img_path):
 
 
 if __name__ == "__main__":
-    histogramEqualize('../data/church.png')
+    histogramEqualize('../data/retina.png')

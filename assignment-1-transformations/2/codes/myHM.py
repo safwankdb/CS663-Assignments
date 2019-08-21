@@ -4,16 +4,19 @@ from PIL import Image
 
 
 def get_cdf(img):
-    h, w = img.shape
-    pdf = np.histogram(img, 256, (0, 256))[0] / (h*w)
+    img = img.reshape(-1)
+    img = img[np.where(img>=0)]
+    pdf = np.histogram(img, 256, (0, 256))[0] / (len(img))
     cdf = pdf.cumsum()
     cdf = 255 * (cdf - cdf.min())/(cdf.max() - cdf.min())
     cdf = cdf.astype(np.uint8)
     return cdf
 
 
-def applyHE(img):
+def applyHE(img, mask=False):
     cdf = get_cdf(img)
+    if mask:
+        img = img * (img >= 0)
     he_img = np.zeros_like(img, np.uint8)
     he_img = cdf[img]
     return he_img
@@ -21,7 +24,7 @@ def applyHE(img):
 
 def applyHM(src, ref):
     ref_cdf = get_cdf(ref)
-    src_he = applyHE(src)
+    src_he = applyHE(src, mask=True)
     inv_cdf = np.zeros(256, np.int) - 1
     for i, p in enumerate(ref_cdf):
         if p == -1:
@@ -39,51 +42,56 @@ def applyHM(src, ref):
     return hm_img
 
 
-def histogramMatch(src_path, ref_path):
+def histogramMatch(src_path, ref_path, src_mask, ref_mask):
     src = Image.open(src_path)
     src = np.array(src)
     ref = Image.open(ref_path)
     ref = np.array(ref)
 
-    assert src.ndim == ref.ndim
-    if src.ndim == 3:
-        img_slices = [applyHM(src[:, :, i], ref[:, :, i]) for i in range(3)]
-        hm_img = np.dstack(img_slices)
-        hm_img = Image.fromarray(hm_img)
-    elif src.ndim == 2:
-        hm_img = applyHM(src, ref)
-        hm_img = Image.fromarray(hm_img)
-    else:
-        raise ValueError
+    src_mask = np.array(Image.open(src_mask))
+    src_mask = np.tile(src_mask, (3,1,1))
+    src_mask = np.transpose(src_mask, (1,2,0))
+
+    ref_mask = np.array(Image.open(ref_mask))
+    ref_mask = np.tile(ref_mask, (3,1,1))
+    ref_mask = np.transpose(ref_mask, (1,2,0))
+
+    src_m = src * src_mask + (src_mask - 1)
+    ref_m = ref * ref_mask + (ref_mask - 1)
+
+    img_slices = [applyHM(src_m[:, :, i], ref_m[:, :, i]) for i in range(3)]
+    hm_img = np.dstack(img_slices)
+    hm_img_m = hm_img * src_mask + (src_mask - 1)
 
     plt.subplot(2, 3, 1)
     plt.imshow(src, cmap='gray')
-    plt.xticks([]),plt.yticks([])
+    plt.xticks([]), plt.yticks([])
     plt.title('Source Image')
 
     plt.subplot(2, 3, 2)
     plt.imshow(ref, cmap='gray')
-    plt.xticks([]),plt.yticks([])
+    plt.xticks([]), plt.yticks([])
     plt.title('Reference Image')
 
     plt.subplot(2, 3, 3)
     plt.imshow(hm_img, cmap='gray')
-    plt.xticks([]),plt.yticks([])
+    plt.xticks([]), plt.yticks([])
     plt.title('Histogram Matched Image')
 
     plt.subplot(2, 3, 4)
-    plt.hist(src.ravel(), 256)
-    plt.xticks([]),plt.yticks([])
+    plt.hist(src_m.ravel(), 256, (0, 256))
+    plt.xticks([]), plt.yticks([])
 
     plt.subplot(2, 3, 5)
-    plt.hist(ref.ravel(), 256)
-    plt.xticks([]),plt.yticks([])
+    plt.hist(ref_m.ravel(), 256, (0, 256))
+    plt.xticks([]), plt.yticks([])
 
     plt.subplot(2, 3, 6)
-    plt.hist(np.array(hm_img).ravel(), 256)
-    plt.xticks([]),plt.yticks([])
+    plt.hist(hm_img_m.ravel(), 256, (0, 256))
+    plt.xticks([]), plt.yticks([])
     plt.show()
 
 
 if __name__ == "__main__":
-    histogramMatch('../data/retina.png', '../data/church.png')
+    histogramMatch('../data/retina.png', '../data/retinaRef.png',
+                   '../data/retinaMask.png', '../data/retinaRefMask.png')
