@@ -1,90 +1,70 @@
 import numpy as np
 from matplotlib import pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
 from PIL import Image
 
-
-def make_filter(r):
-    Y, X = np.mgrid[:2*r+1, :2*r+1]
-    dist = (Y - r)**2 + (X - r)**2
-    mask = dist <= r**2
-    mask = mask / np.sum(mask)
-
-
-def equidistant_points(x, y, h, w, dist):
-    points = set()
-    for i in range(dist+1):
-        j = np.round((dist**2-i**2)**(0.5))
-        points.add((j, i))
-        points.add((i, j))
-    points = np.array(list(points)).astype(np.int)
-    p1 = points + [y, x]
-    p2 = points * [-1, 1] + [y, x]
-    p3 = points * [1, -1] + [y, x]
-    p4 = points * [-1, -1] + [y, x]
-    points = np.concatenate([p1, p2, p3, p4])
-    final_points = []
-    for p in points:
-        if p[0] >= 0 and p[0] < h:
-            if p[1] >= 0 and p[1] < w:
-                final_points.append(list(p))
-    return final_points
-
-
-
-def min_dist(x, y, mask, anchor, thresh):
-    h, w = mask.shape
-    p, q = anchor
-    low = 1
-    high = ((x - p)**2 + (y - q)**2)**0.5
-    while True:
-        if low >= thresh:
-            return thresh
-        dist = np.floor((low+high)/2).astype(np.int)
-        flag = False
-        points = equidistant_points(x, y, h, w, dist)
-        for p in points:
-            if mask[p[0], p[1]] > 0:
-                flag = True
-                break
-        if flag:
-            high = dist
-        else:
-            low = dist
-        if high - low < 2:
-            return dist
-
+from mySpatiallyVaryingKernel import min_dist, blur
 
 
 def plot_r(img, mask, threshold):
     h, w = mask.shape
-    r_map = np.zeros_like(mask).astype(np.int)
-    anchor = None
+    r_map = np.zeros((h, w), np.int)
     for y in range(h):
         for x in range(w):
-            if mask[y, x] > 0:
-                anchor = (x, y)
-                break
-        if anchor is not None:
-            break
-    for y in range(h):
-        for x in range(w):
-            if mask[y, x] > 0:
-                continue
-            r_map[y, x] = min_dist(x, y, mask, anchor,threshold)
+            if mask[y, x] == 0:
+                r_map[y, x] = min_dist(x, y, mask, threshold)
+        print('{:.02f}%'.format((y+1)*100/h), end='\r')
+    print('\nDone', flush='True')
     return r_map
 
 
-if __name__ == "__main__":
-    mask = np.array(Image.open('../images/mask1.png'))
-    img = np.array(Image.open('../data/flower.jpg'))
-    r_map = plot_r(img, mask, 20)
+mask1 = np.array(Image.open('../images/mask1.png').resize((212, 141)))
+img1 = np.array(Image.open('../data/flower.jpg').resize((212, 141)))
 
-    plt.figure()
-    plt.subplot(131)
-    plt.imshow(mask, cmap='gray')
-    plt.subplot(132)
-    plt.imshow(img)
-    plt.subplot(133)
-    plt.imshow(r_map, cmap='jet')
-    plt.show()
+mask2 = np.array(Image.open('../images/mask2.png').resize((550, 366)))
+img2 = np.array(Image.open('../data/bird.jpg').resize((550, 366)))
+
+plt.figure()
+plt.subplot(231)
+plt.imshow(mask1, cmap='gray')
+
+plt.subplot(232)
+img_masked1 = np.dstack([(mask1>0)*img1[:,:,i] for i in range(3)])
+plt.imshow(img_masked1)
+
+plt.subplot(233)
+img_masked1 = np.dstack([(mask1==0)*img1[:,:,i] for i in range(3)])
+plt.imshow(img_masked1)
+
+plt.subplot(234)
+plt.imshow(mask2, cmap='gray')
+
+plt.subplot(235)
+img_masked2 = np.dstack([(mask2>0)*img2[:,:,i].copy() for i in range(3)])
+plt.imshow(img_masked2)
+
+plt.subplot(236)
+img_masked2 = np.dstack([(mask2==0)*img2[:,:,i].copy() for i in range(3)])
+plt.imshow(img_masked2)
+
+plt.show()
+
+r_map1 = plot_r(img1, mask1, 10)
+blur(img1, mask1, r_map1)
+r_map2 = plot_r(img2, mask2, 20)
+
+plt.figure()
+plt.subplot(231)
+plt.imshow(mask1, cmap='gray')
+plt.subplot(232)
+plt.imshow(img1)
+plt.subplot(233)
+plt.imshow(r_map1, cmap='jet')
+# plt.show()
+
+plt.subplot(234)
+plt.imshow(mask2, cmap='gray')
+plt.subplot(235)
+plt.imshow(img2)
+plt.subplot(236)
+plt.imshow(r_map2, cmap='jet')
+plt.show()
