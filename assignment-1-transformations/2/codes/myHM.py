@@ -39,7 +39,7 @@ def applyHM(src, ref):
     inv_cdf = inv_cdf.astype(np.uint8)
     hm_img = np.zeros_like(src, np.uint8)
     hm_img = inv_cdf[src_he]
-    return hm_img
+    return hm_img, src_he
 
 
 def histogramMatch(src_path, ref_path, src_mask, ref_mask):
@@ -59,34 +59,48 @@ def histogramMatch(src_path, ref_path, src_mask, ref_mask):
     src_m = src * src_mask + (src_mask - 1)
     ref_m = ref * ref_mask + (ref_mask - 1)
 
-    img_slices = [applyHM(src_m[:, :, i], ref_m[:, :, i]) for i in range(3)]
+    img_slices = [applyHM(src_m[:, :, i], ref_m[:, :, i])[0] for i in range(3)]
     hm_img = np.dstack(img_slices)
     hm_img_m = hm_img * src_mask + (src_mask - 1)
 
-    plt.subplot(2, 3, 1)
+    he_slices = [applyHM(src_m[:, :, i], ref_m[:, :, i])[1] for i in range(3)]
+    he_img = np.dstack(he_slices)
+    print(he_img.shape)
+    he_img_m = he_img * src_mask + (src_mask - 1)
+
+    plt.subplot(2, 4, 1)
     plt.imshow(src, cmap='gray')
     plt.xticks([]), plt.yticks([])
     plt.title('Source Image')
 
-    plt.subplot(2, 3, 2)
+    plt.subplot(2, 4, 2)
     plt.imshow(ref, cmap='gray')
     plt.xticks([]), plt.yticks([])
     plt.title('Reference Image')
 
-    plt.subplot(2, 3, 3)
+    plt.subplot(2, 4, 3)
+    plt.imshow(he_img, cmap='gray')
+    plt.xticks([]), plt.yticks([])
+    plt.title('Histogram Equalized Image')
+
+    plt.subplot(2, 4, 4)
     plt.imshow(hm_img, cmap='gray')
     plt.xticks([]), plt.yticks([])
     plt.title('Histogram Matched Image')
 
-    plt.subplot(2, 3, 4)
+    plt.subplot(2, 4, 5)
     plt.hist(src_m.ravel(), 64, (0, 256))
     plt.yticks([])
 
-    plt.subplot(2, 3, 5)
+    plt.subplot(2, 4, 6)
     plt.hist(ref_m.ravel(), 64, (0, 256))
     plt.yticks([])
 
-    plt.subplot(2, 3, 6)
+    plt.subplot(2, 4, 7)
+    plt.hist(he_img_m.ravel(), 64, (0, 256))
+    plt.yticks([])
+
+    plt.subplot(2, 4, 8)
     plt.hist(hm_img_m.ravel(), 64, (0, 256))
     plt.yticks([])
     plt.show()

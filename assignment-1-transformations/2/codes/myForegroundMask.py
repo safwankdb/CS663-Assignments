@@ -22,5 +22,7 @@ def threshold_img(img_path, k=50):
     plt.title('Masked Image')
     plt.show()
 
+    return (img > k).astype(np.int)
+
 if __name__ == "__main__":
     threshold_img('../data/statue.png')

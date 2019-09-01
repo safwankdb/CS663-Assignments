@@ -3,42 +3,44 @@ from matplotlib import pyplot as plt
 from PIL import Image
 
 
-def get_cdf(img):
-    img = img.reshape(-1)
-    img = img[np.where(img>=0)]
-    pdf = np.histogram(img, 256, (0, 256))[0] / (len(img))
-    cdf = pdf.cumsum()
-    cdf = 255 * (cdf - cdf.min())/(cdf.max() - cdf.min())
+def split(pdf, img_median):
+    pdf_h1 = pdf[pdf <= (img_median)]
+    pdf_h2 = pdf[pdf > (img_median)]
+    return pdf_h1, pdf_h2
+
+
+def get_cdf(pdf_new, img_median):
+    cdf = 255 * pdf_new.cumsum()
     cdf = cdf.astype(np.uint8)
     return cdf
 
 
-def applyHE(img, mask=False):
-    cdf = get_cdf(img)
-    if mask:
-        img = img * (img >= 0)
+def applyHE(img):
+    h, w = img.shape
+    pdf = np.histogram(img, 256, (0, 256))[0]
+    img_median = np.argsort(pdf)[len(pdf) // 2]
+    h1, h2 = split(pdf, img_median)
+    # h1 = np.array([0.5 / img_median] * len(h1))
+    # h2 = np.array([0.5 / (256 - img_median)] * len(h2))
+    pdf_new = np.array(list(h1) + list(h2))
+    cdf = get_cdf(pdf_new, img_median)
     he_img = np.zeros_like(img, np.uint8)
     he_img = cdf[img]
     return he_img
 
 
-def histogramEqualize(img_path, img_mask=None):
-    img = Image.open(img_path)
+def histogramEqualize(img_path):
+    img = Image.open(img_path).convert('L')
     img = np.array(img)
-
-    if img_mask is not None:
-        img_m = img * img_mask + (img_mask - 1)
-        img = img_m
-
+    # img = img / 255.0
 
     if img.ndim == 3:
         img_slices = [applyHE(img[:, :, i]) for i in range(3)]
         he_img = np.dstack(img_slices)
     elif img.ndim == 2:
-        he_img = applyHE(img, (img_mask is not None))
+        he_img = applyHE(img)
     else:
         raise ValueError
-
 
     plt.subplot(2, 2, 1)
     plt.imshow(img, cmap='gray')
@@ -46,11 +48,7 @@ def histogramEqualize(img_path, img_mask=None):
 
     plt.subplot(2, 2, 2)
     plt.imshow(he_img, cmap='gray')
-    plt.title('Histogram Equalized Image')
-
-    if img_mask is not None:
-        img = img_m
-        he_img = he_img * img_mask + (img_mask - 1)
+    plt.title('Bi-Histogram Equalized Image')
 
     plt.subplot(2, 2, 3)
     plt.hist(img.ravel(), 64, (0, 256))
@@ -63,4 +61,4 @@ def histogramEqualize(img_path, img_mask=None):
 
 
 if __name__ == "__main__":
-    histogramEqualize('../data/TEM.png')
+    histogramEqualize('../data/barbara.png')

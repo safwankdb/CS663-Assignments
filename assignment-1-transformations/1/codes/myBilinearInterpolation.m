@@ -1,6 +1,5 @@
-function [ output_image ]  = myBilinearInterpolation(input,zoom_row,zoom_col)
+function [ output_image ]  = myBilinearInterpolation(im,zoom_row,zoom_col)
 
-[im , map] =imread(input);
 
 [row, col] = size(im); 
 %zooming factor
@@ -30,12 +29,12 @@ for i=1:zr
         
         if (x2 <= row & x1 <= row & y1 <= col & y2 <= col)
 
-            BL=im(x1,y1);
-            TL=im(x1,y2);
-            BR=im(x2,y1);
-            TR=im(x2,y2);
+            bot_left = im(x1,y1);
+            top_left = im(x1,y2);
+            bot_right = im(x2,y1);
+            top_right = im(x2,y2);
         
-            output_image(i,j) = BR*xint*(1-yint) + BL*(1-xint)*(1-yint) + TR*xint*yint + TL*(1-xint)*yint ;
+            output_image(i,j) = bot_right*xint*(1-yint) + bot_left*(1-xint)*(1-yint) + top_right*xint*yint + top_left*(1-xint)*yint ;
         end
     end
 end
