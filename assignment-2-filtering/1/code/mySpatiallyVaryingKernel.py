@@ -7,22 +7,27 @@ def make_kernel(r):
     Y, X = np.mgrid[:2*r+1, :2*r+1]
     dist = (Y - r)**2 + (X - r)**2
     mask = dist <= r**2
-    mask = mask / np.sum(mask)
     return mask
 
 
-def crop_kernel(x, y, h, w, r):
+def multiply(x, y, h, w, r, img):
     kernel = make_kernel(r)
-    print(r)
+    img = img[max(0,y-r):min(y+r+1, h), max(0,x-r):min(w, x+r+1)]
     if x < r:
-        kernel = kernel[r-x:, :]
+        kernel = kernel[:, r-x:]
     elif x >= w - r:
-        kernel = kernel[:w-r-x, :]
+        kernel = kernel[:, :w-r-x-1]
     if y < r:
-        kernel = kernel[:, r-y]
+        kernel = kernel[r-y:, :]
     elif y >= h - r:
-        kernel = kernel[:, :h-r-y]
-    return kernel
+        kernel = kernel[:h-r-y-1, :]
+    kernel =  kernel / np.sum(kernel)
+    try:
+        conv = kernel * img
+    except:
+        print(y, x, h, w, r)
+        print(kernel.shape, img.shape)
+    return np.round(np.sum(conv)).astype(np.int)
 
 
 def equidistant_points(x, y, h, w, dist):
@@ -66,12 +71,16 @@ def min_dist(x, y, mask, thresh):
 
     
 def blur(img, mask, r_map):
-    new_img = np.zeros_like(mask)
     h, w = mask.shape
+    new_img = np.zeros((h,w), np.uint8)
     for y in range(h):
         for x in range(w):
-            kernel = crop_kernel(x, y, h, w, r_map[x, y])
-            print(kernel)
-            plt.imshow(kernel)
-            plt.show()
+            new_img[y,x] = multiply(x, y, h, w, r_map[y, x], img)
+    new_img = img * (mask > 0) + new_img * (mask == 0)
+    return new_img
 
+
+def blur_helper(img, mask, r_map):
+    blur_slices = [blur(img[:,:,i], mask, r_map) for i in range(3)]
+    new_img = np.dstack(blur_slices)
+    return new_img

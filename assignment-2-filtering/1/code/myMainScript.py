@@ -2,10 +2,10 @@ import numpy as np
 from matplotlib import pyplot as plt
 from PIL import Image
 
-from mySpatiallyVaryingKernel import min_dist, blur
+from mySpatiallyVaryingKernel import min_dist, blur_helper, make_kernel
 
 
-def plot_r(img, mask, threshold):
+def make_rmap(img, mask, threshold):
     h, w = mask.shape
     r_map = np.zeros((h, w), np.int)
     for y in range(h):
@@ -13,8 +13,10 @@ def plot_r(img, mask, threshold):
             if mask[y, x] == 0:
                 r_map[y, x] = min_dist(x, y, mask, threshold)
         print('{:.02f}%'.format((y+1)*100/h), end='\r')
-    print('\nDone', flush='True')
+    print('\nRadius map calculated succesfully :)', flush='True')
     return r_map
+
+print('\nRunning time of complete script ~ 6 mins\nBird.jpg consumes 90%% of this time\n')
 
 
 mask1 = np.array(Image.open('../images/mask1.png').resize((212, 141)))
@@ -23,34 +25,30 @@ img1 = np.array(Image.open('../data/flower.jpg').resize((212, 141)))
 mask2 = np.array(Image.open('../images/mask2.png').resize((550, 366)))
 img2 = np.array(Image.open('../data/bird.jpg').resize((550, 366)))
 
+
+# Part 1
 plt.figure()
 plt.subplot(231)
 plt.imshow(mask1, cmap='gray')
-
 plt.subplot(232)
-img_masked1 = np.dstack([(mask1>0)*img1[:,:,i] for i in range(3)])
+img_masked1 = np.dstack([(mask1 > 0)*img1[:, :, i] for i in range(3)])
 plt.imshow(img_masked1)
-
 plt.subplot(233)
-img_masked1 = np.dstack([(mask1==0)*img1[:,:,i] for i in range(3)])
+img_masked1 = np.dstack([(mask1 == 0)*img1[:, :, i] for i in range(3)])
 plt.imshow(img_masked1)
-
 plt.subplot(234)
 plt.imshow(mask2, cmap='gray')
-
 plt.subplot(235)
-img_masked2 = np.dstack([(mask2>0)*img2[:,:,i].copy() for i in range(3)])
+img_masked2 = np.dstack([(mask2 > 0)*img2[:, :, i] for i in range(3)])
 plt.imshow(img_masked2)
-
 plt.subplot(236)
-img_masked2 = np.dstack([(mask2==0)*img2[:,:,i].copy() for i in range(3)])
+img_masked2 = np.dstack([(mask2 == 0)*img2[:, :, i] for i in range(3)])
 plt.imshow(img_masked2)
-
 plt.show()
 
-r_map1 = plot_r(img1, mask1, 10)
-blur(img1, mask1, r_map1)
-r_map2 = plot_r(img2, mask2, 20)
+# Part 2
+r_map1 = make_rmap(img1, mask1, 10)
+r_map2 = make_rmap(img2, mask2, 20)
 
 plt.figure()
 plt.subplot(231)
@@ -59,12 +57,43 @@ plt.subplot(232)
 plt.imshow(img1)
 plt.subplot(233)
 plt.imshow(r_map1, cmap='jet')
-# plt.show()
-
 plt.subplot(234)
 plt.imshow(mask2, cmap='gray')
 plt.subplot(235)
 plt.imshow(img2)
 plt.subplot(236)
 plt.imshow(r_map2, cmap='jet')
+plt.show()
+
+
+
+# Part 3
+# Using 20 pixels as threshold
+plt.subplot(221)
+kernel = make_kernel(4)
+plt.imshow(kernel, cmap='gray')
+
+plt.subplot(222)
+kernel = make_kernel(8)
+plt.imshow(kernel, cmap='gray')
+
+plt.subplot(223)
+kernel = make_kernel(12)
+plt.imshow(kernel, cmap='gray')
+
+plt.subplot(224)
+kernel = make_kernel(16)
+plt.imshow(kernel, cmap='gray')
+plt.show()
+
+# Part 4
+print('Blurring image 1')
+blur1 = blur_helper(img1, mask1, r_map1)
+print('Blurring image 2')
+blur2 = blur_helper(img2, mask2, r_map2)
+
+plt.subplot(211)
+plt.imshow(blur1)
+plt.subplot(212)
+plt.imshow(blur2)
 plt.show()
