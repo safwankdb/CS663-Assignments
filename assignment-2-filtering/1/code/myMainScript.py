@@ -19,10 +19,10 @@ def make_rmap(img, mask, threshold):
 print('\nRunning time of complete script ~ 6 mins\nBird.jpg consumes 90%% of this time\n')
 
 
-mask1 = np.array(Image.open('../images/mask1.png').resize((212, 141)))
+mask1 = np.array(Image.open('../data/mask1.png').resize((212, 141)))
 img1 = np.array(Image.open('../data/flower.jpg').resize((212, 141)))
 
-mask2 = np.array(Image.open('../images/mask2.png').resize((550, 366)))
+mask2 = np.array(Image.open('../data/mask2.png').resize((550, 366)))
 img2 = np.array(Image.open('../data/bird.jpg').resize((550, 366)))
 
 
