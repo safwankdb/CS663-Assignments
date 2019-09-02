@@ -69,20 +69,20 @@ plt.show()
 
 # Part 3
 # Using 20 pixels as threshold
-plt.subplot(221)
+plt.subplot(231)
 kernel = make_kernel(4)
 plt.imshow(kernel, cmap='gray')
-
-plt.subplot(222)
+plt.subplot(232)
 kernel = make_kernel(8)
 plt.imshow(kernel, cmap='gray')
-
-plt.subplot(223)
+plt.subplot(233)
 kernel = make_kernel(12)
 plt.imshow(kernel, cmap='gray')
-
-plt.subplot(224)
+plt.subplot(234)
 kernel = make_kernel(16)
+plt.imshow(kernel, cmap='gray')
+plt.subplot(235)
+kernel = make_kernel(20)
 plt.imshow(kernel, cmap='gray')
 plt.show()
 
@@ -92,8 +92,8 @@ blur1 = blur_helper(img1, mask1, r_map1)
 print('Blurring image 2')
 blur2 = blur_helper(img2, mask2, r_map2)
 
-plt.subplot(211)
+plt.subplot(121)
 plt.imshow(blur1)
-plt.subplot(212)
+plt.subplot(122)
 plt.imshow(blur2)
 plt.show()
