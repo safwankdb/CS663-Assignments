@@ -83,5 +83,5 @@ def clahe(img_path, window_size=150):
 
 
 if __name__ == "__main__":
-    img_path = '../data/canyon.png'
+    img_path = '../data/1.jpg'
     clahe(img_path)

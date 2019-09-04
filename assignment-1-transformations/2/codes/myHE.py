@@ -48,6 +48,8 @@ def histogramEqualize(img_path, img_mask=None):
     plt.imshow(he_img, cmap='gray')
     plt.title('Histogram Equalized Image')
 
+    plt.imsave('he_img.jpg', he_img)
+
     if img_mask is not None:
         img = img_m
         he_img = he_img * img_mask + (img_mask - 1)
@@ -63,4 +65,4 @@ def histogramEqualize(img_path, img_mask=None):
 
 
 if __name__ == "__main__":
-    histogramEqualize('../data/TEM.png')
+    histogramEqualize('../data/1.jpg')

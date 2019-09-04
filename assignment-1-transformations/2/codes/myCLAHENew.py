@@ -31,11 +31,6 @@ def get_cdf(img, x, k, w, prev_pdf=None, threshold=0.05):
     pdf = np.clip(pdf, 0, threshold)
     extra_mass = 1 - np.sum(pdf)
     pdf += extra_mass/256
-    # for i, p in enumerate(pdf):
-    #     if p > threshold:
-    #         extra_mass += p - threshold
-    #         pdf[i] = threshold
-    # pdf += extra_mass / len(pdf)
     cdf = 255 * pdf.cumsum()
     cdf = cdf.astype(np.uint8)
     return cdf, prev_pdf
@@ -69,6 +64,8 @@ def applyCLAHE(img, k, threshold):
             new_pix, prev_pdf = applyHE(tile, i, j, k, w, h, prev_pdf, threshold)
             # new_img[p1[0]:p2[0], p1[1]:p2[1]] = new_tile
             new_img[i, j] = new_pix
+        print('{:.02f}{}'.format(100*(i+1)/h, '%'), end='\r')
+    print('\nFinished a channel', flush=True)
     return new_img
 
 
@@ -101,8 +98,9 @@ def clahe(img_path, window_size, threshold):
     plt.xticks([]), plt.yticks([])
     plt.title('Contrast Limited Adaptive Histogram Equalized Image')
     plt.show()
-
+    return img_clahe
 
 if __name__ == "__main__":
-    img_path = '../data/canyon.png'
-    clahe(img_path, 50, 0.05)
+    img_path = '../data/1.jpg'
+    img_clahe = clahe(img_path, 300, 0.03)
+    plt.imsave('clahe_img.jpg', img_clahe)
