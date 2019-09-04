@@ -68,7 +68,7 @@ img = Image.open('data/boat.jpg')
 img = np.array(img)
 img = (img - img.min())/(img.max()-img.min())
 I_x, I_y = image_gradient(img)
-L_1, L_2 = solve(I_x, I_y, 5)
+L_1, L_2 = solve(I_x, I_y, 5, 2)
 C = get_cornerness(L_1, L_2, 0.05)
 
 
