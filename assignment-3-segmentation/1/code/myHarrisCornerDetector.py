@@ -4,61 +4,53 @@ from PIL import Image
 import time
 
 
-def gaussian_mask(n, sigma=None):
+def gaussian_mask(n, sigma=None, two_dim=False):
     if sigma is None:
         sigma = 0.3*(n//2) + 0.8
-    X = np.mgrid[:n]
-    Y, X = np.mgrid[:n, :n]
-    Y = Y - n//2
-    X = X - n//2
-    kernel = np.exp(-(X**2+Y**2)/(2*sigma**2))
-    kernel = kernel / np.sum(kernel)
+    X = np.arange(-(n//2), n//2+1)
+    kernel = np.exp(-(X**2)/(2*sigma**2))
+    if two_dim:
+        kernel = np.outer(kernel, kernel)
     return kernel
 
 
-def smoothen(I, n=3, sigma=None):
-    kernel = gaussian_mask(n, sigma)
+def seperable_conv(I, filter_x, filter_y):
     h, w = I.shape
-    n = n//2
-    I_s = np.zeros(I.shape)
+    n = len(filter_x)//2
+    I_a = np.zeros((h,w))
+    I_b = np.zeros((h,w))
+    for x in range(n, w-n):
+        patch = I[:, x-n:x+n+1]
+        I_a[:,x] = np.sum(patch * filter_x, 1)
+    filter_y = filter_y.reshape(-1,1)
     for y in range(n, h-n):
-        for x in range(n, w-n):
-            patch = I[y-n:y+n+1, x-n:x+n+1]
-            I_s[y, x] = np.sum(patch * kernel)
-    return I_s
+        patch = I_a[y-n:y+n+1, :]
+        I_b[y,:] = np.sum(patch * filter_y, 0)
+    return I_b
 
 
-def corner_harris(I, n_g=5, n_w=5, k=0.025):
+def corner_harris(I, n_g=5, n_w=5, k=0.06):
     h, w = I.shape
-    sobel_x = np.array([[-1,  0,  1],
-                        [-2,  0,  2],
-                        [-1,  0,  1]])
-    sobel_y = np.array([[1,  2,  1],
-                        [0,  0,  0],
-                        [-1, -2, -1]])
+    sobel_1 = np.array([-1, 0, 1])
+    sobel_2 = np.array([ 1, 2, 1])
     print('- Calculating Image Derivatives')
-    I_x = np.zeros(I.shape)
-    I_y = np.zeros(I.shape)
-    D = np.zeros((h, w, 2, 2))
-    for y in range(1, h-1):
-        for x in range(1, w-1):
-            patch = I[y-1:y+2, x-1:x+2]
-            I_x[y, x] = np.sum(patch * sobel_x)
-            I_y[y, x] = np.sum(patch * sobel_y)
+    I_x = seperable_conv(I, sobel_1, sobel_2)
+    I_y = seperable_conv(I, sobel_2, sobel_1)
     print('- Smoothing Derivatives')
-    I_x = smoothen(I_x, n_g)
-    I_y = smoothen(I_y, n_g)
+    g_kernel = gaussian_mask(n_g)
+    I_x = seperable_conv(I_x, g_kernel, g_kernel)
+    I_y = seperable_conv(I_y, g_kernel, g_kernel)
+    print('- Calculating Structure Tensor and Eigenvalues')
+    D = np.zeros((h,w,2,2))
     for y in range(1, h-1):
         for x in range(1, w-1):
-            a, b = I_x[y, x], I_y[y, x]
+            a, b = I_x[y,x], I_y[y,x]
             D[y, x] = np.array([[a*a, a*b],
                                 [a*b, b*b]])
-    kernel = gaussian_mask(n_w)
-    kernel = np.dstack([kernel]*4)
-    kernel = kernel.reshape(n_w, n_w, 2, 2)
-    L_1 = np.zeros(I_x.shape)
-    L_2 = np.zeros(I_x.shape)
-    print('- Calculating Structure Tensor and Eigenvalues')
+    kernel = gaussian_mask(n_w, two_dim=True)
+    kernel = np.dstack([kernel]*4).reshape(n_w,n_w,2,2)
+    L_1 = np.zeros(I.shape)
+    L_2 = np.zeros(I.shape)
     n = n_w//2
     for y in range(n, h-n):
         for x in range(n, w-n):
@@ -67,8 +59,8 @@ def corner_harris(I, n_g=5, n_w=5, k=0.025):
             a, b, c, d = A.ravel()
             t1 = (a+d)/2
             t2 = np.sqrt((a-d)**2+4*b*c)/2
-            L_1[y, x] = t1+t2
-            L_2[y, x] = t1-t2
+            L_1[y, x] = t1-t2
+            L_2[y, x] = t1+t2
         print('Progress: {:.02f}{}'.format(
             100*(y-2*n)/(h-4*n-2), '%'), end='\r')
     print('- Calculating Corner-ness')
@@ -80,10 +72,10 @@ img_path = '../data/boat.jpg'
 img = np.array(Image.open(img_path).convert('L'))
 img = (img - img.min())/(img.max()-img.min())
 start = time.time()
-C, I_x, I_y, L_1, L_2 = corner_harris(img, k=0.065)
+C, I_x, I_y, L_1, L_2 = corner_harris(img, k=0.06)
 C = (C - C.min())/(C.max()-C.min())
 stop = time.time()
-print('Time Elasped: {:.02f}sec'.format(stop - start))
+print('Done!\nTime Elasped: {:.02f}sec'.format(stop - start))
 
 
 plt.figure(figsize=(15, 5))
@@ -111,15 +103,13 @@ plt.tight_layout()
 plt.show()
 
 
-plt.figure(figsize=(15, 5))
-plt.subplot(131)
-plt.imshow(img, cmap='gray')
-plt.title('Source Image')
-plt.subplot(132)
-plt.imshow(C)
+plt.figure(figsize=(13, 5))
+plt.subplot(121)
+plt.imshow(C-0.457, cmap='jet')
 plt.title('Corner-ness Map')
-plt.subplot(133)
-plt.imshow(img/2+(C > 0.5), cmap='gray')
+plt.colorbar()
+plt.subplot(122)
+plt.imshow(img/2+2*C*(C >= 0.457), cmap='jet')
 plt.title('Detected Corners')
 plt.tight_layout()
 plt.show()
