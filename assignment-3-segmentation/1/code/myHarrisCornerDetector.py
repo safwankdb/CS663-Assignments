@@ -45,20 +45,17 @@ def corner_harris(I, n_g=5, n_w=5, k=0.06):
             a, b = I_x[y, x], I_y[y, x]
             D_temp[y, x] = np.array([[a*a, a*b],
                                      [a*b, b*b]])
-    n = n_w//2
     g_filter = gaussian_mask(n_w)
     g_filter = np.dstack([g_filter]*4).reshape(n_w, 2, 2)
     D = seperable_conv(D_temp, g_filter, g_filter)
     print('- Calculating Eigenvalues')
-    L_1 = np.zeros(I.shape)
-    L_2 = np.zeros(I.shape)
-    for y in range(n, h-n):
-        for x in range(n, w-n):
-            a, b, c, d = D[y, x].ravel()
-            t1 = (a+d)/2
-            t2 = np.sqrt((a-d)**2+4*b*c)/2
-            L_1[y, x] = t1-t2
-            L_2[y, x] = t1+t2
+    P = D[:, :, 0, 0]
+    Q = D[:, :, 0, 1]
+    R = D[:, :, 1, 1]
+    T1 = (P+R)/2
+    T2 = np.sqrt(np.square(P-R)+4*np.square(Q))/2
+    L_1 = T1-T2
+    L_2 = T1+T2
     print('- Calculating Corner-ness')
     C = L_1*L_2 - k*(L_1+L_2)**2
     return C, I_x, I_y, L_1, L_2
