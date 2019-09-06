@@ -14,7 +14,7 @@ def gaussian_mask(n, sigma=None):
 
 def seperable_conv(I, filter_x, filter_y):
     h, w = I.shape[:2]
-    n = filter_x.shape[0] // 2
+    n = filter_x.shape[0]//2
     I_a = np.zeros(I.shape)
     I_b = np.zeros(I.shape)
     for x in range(n, w-n):
@@ -39,12 +39,11 @@ def corner_harris(I, n_g=5, n_w=5, k=0.06):
     I_x = seperable_conv(I_x, g_kernel, g_kernel)
     I_y = seperable_conv(I_y, g_kernel, g_kernel)
     print('- Calculating Structure Tensors')
-    D_temp = np.zeros((h, w, 2, 2))
-    for y in range(1, h-1):
-        for x in range(1, w-1):
-            a, b = I_x[y, x], I_y[y, x]
-            D_temp[y, x] = np.array([[a*a, a*b],
-                                     [a*b, b*b]])
+    D_temp = np.zeros((h,w,2,2))
+    D_temp[:,:,0,0] = np.square(I_x)
+    D_temp[:,:,0,1] = I_x*I_y
+    D_temp[:,:,1,0] = D_temp[:,:,0,1]
+    D_temp[:,:,1,1] = np.square(I_y)
     g_filter = gaussian_mask(n_w)
     g_filter = np.dstack([g_filter]*4).reshape(n_w, 2, 2)
     D = seperable_conv(D_temp, g_filter, g_filter)
@@ -79,7 +78,6 @@ plt.subplot(122)
 plt.title('$I_y$')
 plt.imshow(I_y, cmap='gray')
 plt.tight_layout()
-plt.savefig('../report/1.jpg')
 plt.show()
 
 
@@ -93,7 +91,6 @@ plt.title(r'$\lambda_2$')
 plt.imshow(L_2, cmap='gnuplot')
 plt.colorbar()
 plt.tight_layout()
-plt.savefig('../report/2.jpg')
 plt.show()
 
 
@@ -106,5 +103,4 @@ plt.subplot(122)
 plt.imshow(img/2+2*C*(C >= 0.457), cmap='gnuplot')
 plt.title('Detected Corners')
 plt.tight_layout()
-plt.savefig('../report/3.jpg')
 plt.show()
