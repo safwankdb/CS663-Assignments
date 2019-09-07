@@ -1,7 +1,4 @@
 import numpy as np
-from matplotlib import pyplot as plt
-from PIL import Image
-import time
 
 
 def gaussian_mask(n, sigma=None):
@@ -31,23 +28,19 @@ def corner_harris(I, n_g=5, n_w=5, k=0.06):
     h, w = I.shape
     sobel_1 = np.array([-1, 0, 1])
     sobel_2 = np.array([1, 2, 1])
-    print('- Calculating Image Derivatives')
     I_x = seperable_conv(I, sobel_1, sobel_2)
     I_y = seperable_conv(I, sobel_2, sobel_1)
-    print('- Smoothing Derivatives')
     g_kernel = gaussian_mask(n_g)
     I_x = seperable_conv(I_x, g_kernel, g_kernel)
     I_y = seperable_conv(I_y, g_kernel, g_kernel)
-    print('- Calculating Structure Tensors')
-    D_temp = np.zeros((h,w,2,2))
-    D_temp[:,:,0,0] = np.square(I_x)
-    D_temp[:,:,0,1] = I_x*I_y
-    D_temp[:,:,1,0] = D_temp[:,:,0,1]
-    D_temp[:,:,1,1] = np.square(I_y)
+    D_temp = np.zeros((h, w, 2, 2))
+    D_temp[:, :, 0, 0] = np.square(I_x)
+    D_temp[:, :, 0, 1] = I_x*I_y
+    D_temp[:, :, 1, 0] = D_temp[:, :, 0, 1]
+    D_temp[:, :, 1, 1] = np.square(I_y)
     g_filter = gaussian_mask(n_w)
     g_filter = np.dstack([g_filter]*4).reshape(n_w, 2, 2)
     D = seperable_conv(D_temp, g_filter, g_filter)
-    print('- Calculating Eigenvalues')
     P = D[:, :, 0, 0]
     Q = D[:, :, 0, 1]
     R = D[:, :, 1, 1]
@@ -55,52 +48,5 @@ def corner_harris(I, n_g=5, n_w=5, k=0.06):
     T2 = np.sqrt(np.square(P-R)+4*np.square(Q))/2
     L_1 = T1-T2
     L_2 = T1+T2
-    print('- Calculating Corner-ness')
     C = L_1*L_2 - k*np.square(L_1+L_2)
     return C, I_x, I_y, L_1, L_2
-
-
-img_path = '../data/boat.jpg'
-img = np.array(Image.open(img_path).convert('L'))
-img = (img - img.min())/(img.max()-img.min())
-start = time.time()
-C, I_x, I_y, L_1, L_2 = corner_harris(img, k=0.06)
-C = (C - C.min())/(C.max()-C.min())
-stop = time.time()
-print('Done!\nTime Elapsed: {:.02f}s'.format(stop - start))
-
-
-plt.figure(figsize=(10, 5))
-plt.subplot(121)
-plt.title('$I_x$')
-plt.imshow(I_x, cmap='gray')
-plt.subplot(122)
-plt.title('$I_y$')
-plt.imshow(I_y, cmap='gray')
-plt.tight_layout()
-plt.show()
-
-
-plt.figure(figsize=(16, 5))
-plt.subplot(121)
-plt.title(r'$\lambda_1$')
-plt.imshow(L_1, cmap='gnuplot')
-plt.colorbar()
-plt.subplot(122)
-plt.title(r'$\lambda_2$')
-plt.imshow(L_2, cmap='gnuplot')
-plt.colorbar()
-plt.tight_layout()
-plt.show()
-
-
-plt.figure(figsize=(13, 5))
-plt.subplot(121)
-plt.imshow(C-0.457, cmap='gnuplot')
-plt.title('Corner-ness Map')
-plt.colorbar()
-plt.subplot(122)
-plt.imshow(img/2+2*C*(C >= 0.457), cmap='gnuplot')
-plt.title('Detected Corners')
-plt.tight_layout()
-plt.show()

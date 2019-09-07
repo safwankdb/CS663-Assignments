@@ -5,7 +5,6 @@
 %   Spatial bandwidth (H_s) = 5
 %   Iterations = 25
 %   K in K-NN = 300 to 350
-
 tic;
 %% Flower
 input = imread('../data/flower.png');
@@ -30,6 +29,14 @@ daspect([1 1 1])
 % take an unbounded amount of time to converge. Hence the output shown may
 % still have some finite gradients.
 
+% The total number of unique colors can be obtained as follows.
+
+unique_colors = unique(output(:,:,1) + 2*(output(:,:,2)) + 4*(output(:,:,3)));
+c = numel(unique_colors);
+
+% Thus the color space of the image can now be represented using log(c)
+% bits, instead of 8*3 bits.
+
 %%  Plotting scatter plot
 
 %% Input
@@ -47,10 +54,10 @@ subplot(1,2,1), imshow(output);
 title('Output Image');
 subplot(1,2,2), scatter3(lo(:,1), lo(:,2), lo(:,3),ones(row_op*col_op,1), lo);
 title('Scatter plot of output image');
-
 toc;
 
 %% Baboon
+
 tic;
 input = imread('../data/baboonColor.png');
 H_i = 60;
@@ -88,5 +95,4 @@ title('Scatter plot of output image');
 %% Notes on Implementation
 % We highly vectorised the code and avoided loops as far as possible
 toc;
-
 
