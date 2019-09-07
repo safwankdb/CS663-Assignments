@@ -56,7 +56,7 @@ def corner_harris(I, n_g=5, n_w=5, k=0.06):
     L_1 = T1-T2
     L_2 = T1+T2
     print('- Calculating Corner-ness')
-    C = L_1*L_2 - k*(L_1+L_2)**2
+    C = L_1*L_2 - k*np.square(L_1+L_2)
     return C, I_x, I_y, L_1, L_2
 
 
