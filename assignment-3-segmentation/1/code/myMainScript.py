@@ -4,7 +4,7 @@ from PIL import Image
 
 from myHarrisCornerDetector import corner_harris
 
-img_path = '../data/boat.jpg'
+img_path = '../data/test.jpg'
 img = array(Image.open(img_path))
 img = (img - img.min())/(img.max()-img.min())
 C, I_x, I_y, L_1, L_2 = corner_harris(img, k=0.06)
