@@ -1,0 +1,47 @@
+% function[] = myIdealFilt(D, img)
+
+D = 40;
+img = imread('../data/barbara256.png');
+[r, c] = size(img);
+
+Y = fftshift(fft2(img));
+myFilt = zeros(size(Y));
+
+figure
+subplot(2, 2, 1), imshow(log(abs(Y) + 1), [], 'InitialMagnification', 'fit');
+title('Log Magnitude of F.T. of original image');
+colorbar, axis on;
+
+for i = 1:r
+    for j = 1:c
+        if(((i-r/2)^2 + (j-c/2)^2) <= D^2)
+            myFilt(i, j) = 1; %Low Pass Filter
+        end
+    end
+end
+
+myFilt = padarray(myFilt, [r/2 c/2]);
+
+Yn = ifft2(ifftshift(Y.*myFilt(129:)));
+
+subplot(2, 2, 2), imshow(myFilt, [], 'InitialMagnification', 'fit');
+title(strcat('Ideal Low Pass Filter with D = ', num2str(D)));
+colorbar, axis on;
+
+subplot(2, 2, 3), imshow(log(abs(Y.*myFilt) + 1), [], 'InitialMagnification', 'fit');
+title('Log Magnitude of F.T. of filtered image');
+colorbar, axis on;
+
+subplot(2, 2, 4), imshow(uint8(abs(Yn)), [], 'InitialMagnification', 'fit');
+title('Filtered Image');
+colorbar, axis on;
+%Plotting the original and filtered image
+figure
+subplot(1, 2, 1), imshow(uint8(img), [], 'InitialMagnification', 'fit');
+title('Original Image');
+colorbar, axis on;
+
+subplot(1, 2, 2), imshow(uint8(abs(Yn)), [], 'InitialMagnification', 'fit');
+title('Filtered Image');
+colorbar, axis on;
+% end
